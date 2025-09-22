@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mapa de Ubicaciones en Montevideo</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 0; }
+        #container { display: flex; height: 100vh; }
+        #sidebar { width: 300px; overflow-y: scroll; padding: 10px; border-right: 1px solid #ccc; }
+        #sidebar h2 { margin-top: 0; }
+        #locationsList { list-style-type: none; padding: 0; }
+        #locationsList li { padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; }
+        #locationsList li:hover { background-color: #f0f0f0; }
+        #map { flex-grow: 1; }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <div id="sidebar">
+        <h2>Ubicaciones Clave</h2>
+        <ul id="locationsList"></ul>
+    </div>
+    <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map').setView([-34.9036, -56.1885], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var locationsData = [
+        {"label": "Terminal 3 Cruces  (Bv. Artigas y Salvador Ferrer Serra) ",  "address": "Bv. Artigas y Salvador Ferrer Serra", "lat": ﻿-34.89418566, "lng":  -56.16667986},
+        {"label": "Terminal Río Branco (Galicia y Río Branco)", "address": "Galicia y Río Branco", "lat": -34.90038988406878, "lng":-56.19658917771571},
+        {"label": "Puerto de Montevideo/Terminal de Pasajeros (Yacare y Rambla 25 de Agosto 1825)", "address": "Yacare y Rambla 25 de Agosto 1825", "lat": -34.904410915514006, "lng": -56.21012999386164},
+        {"label": "Hospital Italiano (Jorge Canning y Bv. Artigas)", "address": "Jorge Canning y Bv. Artigas", "lat":  ﻿-34.895988888889,"lng": -56.164280555556},
+        {"label": "Hospital Español (Av. Gral. Garibaldi y Pando)", "address": "Av. Gral. Garibaldi y Pando", "lat": -34.87476122468045,"lng": -56.18140899014181},
+        {"label": "Hospital de Clínicas (Av. Italia y Las Heras)", "address": "Av. Italia y Las Heras", "lat":-34.89112035237893,"lng": -56.15181142174397},
+        {"label": "Hospital Maciel (25 de Mayo y Maciel)", "address": "25 de Mayo y Maciel", "lat": -34.90815850583069, "lng": -56.211847230617444},
+        {"label": "Hospital Militar(Av. 8 de Octubre y Mariano Moreno)", "address": "Av. 8 de Octubre y Mariano Moreno", "lat":-34.88369646043353, "lng": -56.15488773681353},
+        {"label": "Sanatorio Banco de Seguros(Av. José Pedro Varela y Bv. Batlle y Ordóñez)", "address": "Av. José Pedro Varela y Bv. Batlle y Ordóñez", "lat":-34.86720892284878,"lng":-56.15945834654123},
+        {"label": "Hospital Pasteur(Larravide y Asilo)", "address": "Larravide y Asilo", "lat":-34.87474247229064,"lng":-56.138138454098815},
+        {"label": "Hospital Piñeyro del Campo(Larravide y Morelli)", "address": "Larravide y Morelli", "lat":-34.87642039510339,"lng": -56.13623662372038},
+        {"label": "Hospital Pereyra Rossell(Bv. Artigas y Francisco Canaro)", "address": "Bv. Artigas y Francisco Canaro", "lat":-34.898758285553754,"lng": -56.164255178378504},
+        {"label": "Hospital Saint Bois(Cno. Colman y Guanahany)", "address": "Cno. Colman y Guanahany", "lat":-34.7881911493326, "lng":-56.24112163979963},
+        {"label": "Hospital Vilardebó(Av. Millán y Santa Fé)", "address": "Av. Millán y Santa Fé", "lat": -34.87930607212846,"lng": -56.1878170221948},
+        {"label": "Hospital Policial(Bv. Batlle y Ordóñez y José Pedro Varela)", "address": "Bv. Batlle y Ordóñez y José Pedro Varela", "lat": -34.868317864377616,"lng": -56.16119146004095},
+        {"label": "Jefatura de Policía(San José y Yí)", "address": "San José y Yí", "lat": -34.90647212639585, "lng":-56.188934045002775},
+        {"label": "Comisaría de la Mujer(San José y Paraguay)", "address": "San José y Paraguay", "lat":-34.906748277062576, "lng": -56.19182295515011},
+        {"label": "Comisaría de la Seccional 1ª(25 de Mayo y Pérez Castellano)", "address": "25 de Mayo y Pérez Castellano", "lat": -34.90756168138962, "lng": -56.210860234796954},
+        {"label": "Comisaría de la Seccional 2ª(Zelmar Michelini y Maldonado)", "address": "Zelmar Michelini y Maldonado", "lat":-34.90907669379822, "lng":-56.18978914697455},
+        {"label": "Comisaría de la Seccional 3ª(Paysandú y Yí)", "address": "Paysandú y Yí", "lat":-34.90208397616324, "lng": -56.190009827524634},
+        {"label": "Comisaría de la Seccional 4ª(Miguelete y Inca)", "address": "Miguelete y Inca", "lat": -34.89317375253586,"lng": -56.17702230613934},
+        {"label": "Comisaría de la Seccional 5ª(Joaquin de Salterain y Canelones)", "address": "Joaquin de Salterain y Canelones", "lat": -34.90661435182329,"lng": -56.169855189947924},
+        {"label": "Comisaría de la Seccional 6ª(Av. Agraciada y Coronel Tajes)", "address": "Av. Agraciada y Coronel Tajes", "lat":-34.88646556187116,"lng":-56.1916093728881},
+        {"label": "Comisaría de la Seccional 7ª(Félix Olmedo y Valentín Gómez)", "address": "Félix Olmedo y Valentín Gómez", "lat": -34.86423597717823, "lng": -56.20864454608738},
+        {"label": "Comisaría de la Seccional 8ª(Av. Millán y Molinos de Raffo)", "address": "Av. Millán y Molinos de Raffo", "lat":-34.84248487629142,"lng":-56.2086121588334},
+        {"label": "Comisaría de la Seccional 9ª(Sambucetti y Av. Gral. Garibaldi)", "address": "Sambucetti y Av. Gral. Garibaldi", "lat": -34.89070431690366,"lng": -56.15812956233624},
+        {"label": "Comisaría de la Seccional 10ª(Gabriel Pereira y Libertad)", "address": "Gabriel Pereira y Libertad", "lat":-34.907088748253265,"lng": -56.15024625593223},
+        {"label": "Comisaría de la Seccional 11ª(Velsen y Santiago de Anca)", "address": "Velsen y Santiago de Anca", "lat":-34.893357696828915,"lng":-56.1109416349097},
+        {"label": "Comisaría de la Seccional 12ª(Av. Millán y Pierre Fossey)", "address": "Av. Millán y Pierre Fossey", "lat":-34.85461308590152,"lng": -56.1968288482664},
+        {"label": "Comisaría de la Seccional 13ª(Bv. Artigas y Cufré)", "address": "Bv. Artigas y Cufré", "lat":-34.8697639817805,"lng":-56.171622713807494},
+        {"label": "Comisaría de la Seccional 14ª(Av. Italia y Almirón)", "address": "Av. Italia y Almirón", "lat":-34.88339301542594,"lng": -56.09121287198064},
+        {"label": "Comisaría de la Seccional 15ª(Av. 8 de octubre y Gobernador de Viana)", "address": "Av. 8 de octubre y Gobernador de Viana", "lat":-34.875574317772134,"lng":-56.14123305083958},
+        {"label": "Comisaría de la Seccional 16ª(Carreras Nacionales y Calamet)", "address": "Carreras Nacionales y Calamet", "lat":-34.85091325067702,"lng":-56.14367474372693},
+        {"label": "Comisaría de la Seccional 17ª(Aparicio Saravia y Martirené)", "address": "Aparicio Saravia y Martirené", "lat":-34.836329414109684,"lng":-56.17279300679002},
+        {"label": "Comisaría de la Seccional 18ª(Giannino Castiglioni y Camino Repetto)", "address": "Giannino Castiglioni y Camino Repetto", "lat":-34.80057973801456, "lng":-56.08685992803682},
+        {"label": "Comisaría de la Seccional 19ª(Av. Carlos María Ramírez y Carlos de la Vega)", "address": "Av. Carlos María Ramírez y Carlos de la Vega", "lat":-34.85697563889363,"lng":-56.22460980763635},
+        {"label": "Comisaría de la Seccional 20ª(Av. Luis Batlle Berres y La Balsa)", "address": "Av. Luis Batlle Berres y La Balsa", "lat":-34.78882628172687,"lng":-56.35362658636891},
+        {"label": "Comisaría de la Seccional 21ª(Albérico Passadore y Plaza Vidiella)", "address": "Albérico Passadore y Plaza Vidiella", "lat":-34.80468330713269,"lng":-56.22133484401771},
+        {"label": "Comisaría de la Seccional 22ª(Camino Melilla y Peabody)", "address": "Camino Melilla y Peabody", "lat":-34.79901884573284,"lng": -56.256604475519666},
+        {"label": "Comisaría de la Seccional 23ª(Av. Luis Batlle Berres y Camino del Fortín)", "address": "Av. Luis Batlle Berres y Camino del Fortín","lat":-34.837511069728045,"lng":-56.26985576854245},
+        {"label": "Comisaría de la Seccional 24ª(Prusia y Río de Janeiro)", "address": "Prusia y Río de Janeiro", "lat":-34.887357669788365,"lng":-56.25285969807782},
+        {"label": "Policía Nacional de Tránsito(Camino Maldonado y Roma)", "address": "Camino Maldonado y Roma", "lat":-34.851780747710656,"lng":-56.12915456471789}
+    ];
+
+    var markers = {};
+    var locationsList = document.getElementById('locationsList');
+
+    locationsData.forEach(function(location) {
+        var marker = L.marker([location.lat, location.lng]).addTo(map)
+            .bindPopup("<b>" + location.label + "</b><br>" + location.address);
+        markers[location.label] = marker;
+
+        var listItem = document.createElement('li');
+        listItem.textContent = location.label;
+        locationsList.appendChild(listItem);
+
+        listItem.addEventListener('click', function() {
+            var selectedMarker = markers[location.label];
+            map.panTo(selectedMarker.getLatLng());
+            selectedMarker.openPopup();
+        });
+    });
+</script>
+
+
+<div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+  <a href="index.html" 
+     style="background-color: #007bff; color: white; padding: 10px 20px; 
+            border-radius: 5px; text-decoration: none; font-weight: bold; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+    ⬅ Volver al inicio
+  </a>
+</div>
+
+</body>
+</html>

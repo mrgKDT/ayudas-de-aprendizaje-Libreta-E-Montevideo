@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario Intendencia de Montevideo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .quiz-question {
+            margin-bottom: 20px;
+        }
+        .quiz-question h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option {
+            background-color: #e9e9e9;
+            padding: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            font-size: 16px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .option:hover {
+            background-color: #dcdcdc;
+            transform: translateY(-2px);
+        }
+        .option.selected {
+            background-color: #b3d4fc;
+            border: 2px solid #007bff;
+        }
+        .option.correct {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
+        }
+        .option.incorrect {
+            background-color: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        .check-icon {
+            display: none;
+            color: #007bff;
+            font-size: 24px;
+            line-height: 1;
+        }
+        .option.selected .check-icon {
+            display: block;
+        }
+        #submit-btn, #restart-btn {
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        #submit-btn:hover, #restart-btn:hover {
+            background-color: #0056b3;
+        }
+        #feedback {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Cuestionario de Ubicaciones</h1>
+        <div id="quiz-content">
+            <div id="question-text" class="quiz-question"></div>
+            <div id="options" class="options-container"></div>
+            <button id="submit-btn">Enviar</button>
+            <div id="feedback"></div>
+        </div>
+        <div id="results" style="display: none;">
+            <h2>Resultados Finales</h2>
+            <div id="summary"></div>
+            <button id="restart-btn">Reiniciar Cuestionario</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { lugar: "Terminal 3 Cruces", calle1: "Bv. Artigas", calle2: "Salvador Ferrer Serra" },
+            { lugar: "Terminal Río Branco", calle1: "Galicia", calle2: "Río Branco" },
+            { lugar: "Hospital Italiano", calle1: "Jorge Canning", calle2: "Bv. Artigas" },
+            { lugar: "Puerto de Montevideo / Terminal Pasajeros", calle1: "Yacare", calle2: "Rambla 25 de Agosto 1825"},
+            { lugar: "Hospital Español", calle1: "Av. Gral. Garibaldi", calle2: "Pando" },
+            { lugar: "Hospital de Clínicas", calle1: "Av. Italia", calle2: "Las Heras" },
+            { lugar: "Hospital Maciel", calle1: "25 de Mayo", calle2: "Maciel" },
+            { lugar: "Hospital Militar", calle1: "Av. 8 de Octubre", calle2: "Mariano Moreno" },
+            { lugar: "Sanatorio Banco de Seguros", calle1: "Av. José Pedro Varela", calle2: "Bv. Batlle y Ordóñez" },
+            { lugar: "Hospital Pasteur", calle1: "Larravide", calle2: "Asilo" },
+            { lugar: "Hospital Piñeyro del Campo", calle1: "Larravide", calle2: "Morelli" },
+            { lugar: "Hospital Pereyra Rossell", calle1: "Bv. Artigas", calle2: "Francisco Canaro" },
+            { lugar: "Hospital Saint Bois", calle1: "Cno. Colman", calle2: "Guanahany" },
+            { lugar: "Hospital Vilardebó", calle1: "Av. Millán", calle2: "Santa Fé" },
+            { lugar: "Hospital Policial", calle1: "Bv. Batlle y Ordóñez", calle2: "José Pedro Varela" },
+            { lugar: "Jefatura de Policía", calle1: "San José", calle2: "Yí" },
+            { lugar: "Comisaría de la Mujer", calle1: "San José", calle2: "Paraguay" },
+            { lugar: "Comisaría de la Seccional 1ª", calle1: "25 de Mayo", calle2: "Pérez Castellano" },
+            { lugar: "Comisaría de la Seccional 2ª", calle1: "Zelmar Michelini", calle2: "Maldonado" },
+            { lugar: "Comisaría de la Seccional 3ª", calle1: "Paysandú", calle2: "Yí" },
+            { lugar: "Comisaría de la Seccional 4ª", calle1: "Miguelete", calle2: "Inca" },
+            { lugar: "Comisaría de la Seccional 5ª", calle1: "Joaquin de Salterain", calle2: "Canelones" },
+            { lugar: "Comisaría de la Seccional 6ª", calle1: "Av. Agraciada", calle2: "Coronel Tajes" },
+            { lugar: "Comisaría de la Seccional 7ª", calle1: "Félix Olmedo", calle2: "Valentín Gómez" },
+            { lugar: "Comisaría de la Seccional 8ª", calle1: "Av. Millán", calle2: "Molinos de Raffo" },
+            { lugar: "Comisaría de la Seccional 9ª", calle1: "Sambucetti", calle2: "Av. Gral. Garibaldi" },
+            { lugar: "Comisaría de la Seccional 10ª", calle1: "Gabriel Pereira", calle2: "Libertad" },
+            { lugar: "Comisaría de la Seccional 11ª", calle1: "Velsen", calle2: "Santiago de Anca" },
+            { lugar: "Comisaría de la Seccional 12ª", calle1: "Av. Millán", calle2: "Pierre Fossey" },
+            { lugar: "Comisaría de la Seccional 13ª", calle1: "Bv. Artigas", calle2: "Cufré" },
+            { lugar: "Comisaría de la Seccional 14ª", calle1: "Av. Italia", calle2: "Almirón" },
+            { lugar: "Comisaría de la Seccional 15ª", calle1: "Av. 8 de octubre", calle2: "Gobernador de Viana" },
+            { lugar: "Comisaría de la Seccional 16ª", calle1: "Carreras Nacionales", calle2: "Calamet" },
+            { lugar: "Comisaría de la Seccional 17ª", calle1: "Aparicio Saravia", calle2: "Martirene" },
+            { lugar: "Comisaría de la Seccional 18ª", calle1: "Giannino Castiglioni", calle2: "Camino Repetto" },
+            { lugar: "Comisaría de la Seccional 19ª", calle1: "Av. Carlos María Ramírez", calle2: "Carlos de la Vega" },
+            { lugar: "Comisaría de la Seccional 20ª", calle1: "Av. Luis Batlle Berres", calle2: "La Balsa" },
+            { lugar: "Comisaría de la Seccional 21ª", calle1: "Albérico Passadore", calle2: "Plaza Vidiella" },
+            { lugar: "Comisaría de la Seccional 22ª", calle1: "Cno. Melilla", calle2: "Peabody" },
+            { lugar: "Comisaría de la Seccional 23ª", calle1: "Av. Luis Batlle Berres", calle2: "Camino del Fortín" },
+            { lugar: "Comisaría de la Seccional 24ª", calle1: "Prusia", calle2: "Río de Janeiro" },
+            { lugar: "Policia Nacional de Transito", calle1: "Camino Maldonado", calle2: "Roma" },
+        ];
+
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let totalScore = 0;
+        let userAnswers = [];
+        let numQuestions = 0;
+        const alphabet = 'abcd';
+        let currentQuestionState = {
+            selections: [],
+            score: 0
+        };
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function createQuiz() {
+            let numQuestionsInput = prompt(`¿Cuántas preguntas quieres? (Máximo ${quizData.length})`);
+            numQuestions = parseInt(numQuestionsInput);
+
+            if (isNaN(numQuestions) || numQuestions <= 0 || numQuestions > quizData.length) {
+                alert(`Por favor, ingresa un número válido entre 1 y ${quizData.length}.`);
+                return createQuiz();
+            }
+
+            shuffleArray(quizData);
+            questions = quizData.slice(0, numQuestions);
+            currentQuestionIndex = 0;
+            totalScore = 0;
+            userAnswers = [];
+            document.getElementById('quiz-content').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const currentQuiz = questions[currentQuestionIndex];
+            const questionText = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options');
+            const feedback = document.getElementById('feedback');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            currentQuestionState = {
+                selections: [],
+                score: 0
+            };
+
+            questionText.innerHTML = `<h3>Pregunta ${currentQuestionIndex + 1} de ${numQuestions}</h3><br>¿Cuáles de las siguientes opciones se encuentran en la **${currentQuiz.lugar}**?<br>(Selecciona la primer opción)`;
+            optionsContainer.innerHTML = '';
+            feedback.textContent = '';
+            submitBtn.style.display = 'none';
+
+            const allOptions = [currentQuiz.calle1, currentQuiz.calle2];
+            
+            const incorrectOptions = quizData
+                .filter(item => item.lugar !== currentQuiz.lugar)
+                .map(item => [item.calle1, item.calle2])
+                .flat();
+
+            shuffleArray(incorrectOptions);
+            allOptions.push(incorrectOptions[0], incorrectOptions[1]);
+            shuffleArray(allOptions);
+
+            allOptions.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = `${alphabet[index]}. ${option} <span class="check-icon">✔</span>`;
+                optionDiv.onclick = handleSelection;
+                optionsContainer.appendChild(optionDiv);
+            });
+        }
+
+        function handleSelection(event) {
+            const selectedOptionDiv = event.currentTarget;
+            // El problema era que esta línea tomaba el "✔" como parte del texto.
+            // La nueva línea toma el texto y elimina la letra y el punto inicial, y el símbolo de "check".
+            const selectedText = selectedOptionDiv.textContent.replace(/^([a-d]\. )|(✔)/g, '').trim();
+
+            const currentQuiz = questions[currentQuestionIndex];
+            const correctStreets = [currentQuiz.calle1, currentQuiz.calle2];
+            
+            selectedOptionDiv.classList.add('selected');
+
+            // Deshabilitar todas las opciones para evitar más clics
+            document.querySelectorAll('.option').forEach(option => {
+                option.style.pointerEvents = 'none';
+                option.onclick = null;
+            });
+            
+            const isCorrect = correctStreets.includes(selectedText);
+            
+            if (isCorrect) {
+                selectedOptionDiv.classList.add('correct');
+                currentQuestionState.score += 0.5;
+            } else {
+                selectedOptionDiv.classList.add('incorrect');
+            }
+            currentQuestionState.selections.push({
+                text: selectedText,
+                isCorrect: isCorrect
+            });
+
+            // Lógica para la primera selección
+            if (currentQuestionState.selections.length === 1) {
+                document.getElementById('feedback').textContent = "Respuesta registrada. Ahora, selecciona tu segunda opción.";
+                
+                // Habilitar de nuevo las opciones que no han sido seleccionadas
+                document.querySelectorAll('.option').forEach(option => {
+                    if (option !== selectedOptionDiv) {
+                        option.style.pointerEvents = 'auto';
+                        option.onclick = handleSelection;
+                    }
+                });
+
+            // Lógica para la segunda selección
+            } else if (currentQuestionState.selections.length === 2) {
+                // Registrar el estado completo de la pregunta
+                totalScore += currentQuestionState.score;
+                userAnswers.push({
+                    question: currentQuiz.lugar,
+                    selections: currentQuestionState.selections,
+                    correct: correctStreets,
+                    score: currentQuestionState.score
+                });
+
+                // Mostrar la retroalimentación final de la pregunta
+                const allOptions = document.querySelectorAll('.option');
+                allOptions.forEach(option => {
+                    const optionText = option.textContent.replace(/^([a-d]\. )|(✔)/g, '').trim();
+                    if (correctStreets.includes(optionText) && !option.classList.contains('correct')) {
+                        option.classList.add('correct');
+                    }
+                    option.style.pointerEvents = 'none';
+                });
+
+                document.getElementById('feedback').innerHTML = `Pregunta finalizada. Obtuviste **${currentQuestionState.score}** puntos.`;
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.style.display = 'block';
+                submitBtn.textContent = 'Siguiente Pregunta';
+                submitBtn.onclick = nextQuestion;
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < numQuestions) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-content').style.display = 'none';
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.style.display = 'block';
+            const summaryDiv = document.getElementById('summary');
+            summaryDiv.innerHTML = `<h3>Puntaje total: ${totalScore} de ${numQuestions} posibles.</h3><br>`;
+
+            userAnswers.forEach((answer, index) => {
+                let resultText = `<h4>Pregunta ${index + 1}: ${answer.question}</h4>`;
+                
+                const aciertos = answer.selections.filter(s => s.isCorrect).map(s => s.text);
+                const fallas = answer.selections.filter(s => !s.isCorrect).map(s => s.text);
+
+                resultText += `<p><strong>Tu respuesta:</strong> ${answer.selections.map(s => s.text).join(' y ')}</p>`;
+
+                if (aciertos.length === 2) {
+                    resultText += `<p style="color: green;">✅ <strong>Resultado:</strong> ¡Completamente correcto! Acertaste ambas calles.</p>`;
+                } else if (aciertos.length === 1 && fallas.length === 1) {
+                    resultText += `<p style="color: orange;">⚠️ <strong>Resultado:</strong> Respuesta parcialmente correcta.</p>`;
+                    resultText += `<p>✅ <strong>Acierto:</strong> Elegiste la calle **${aciertos[0]}**.</p>`;
+                    resultText += `<p>❌ <strong>Falla:</strong> Elegiste la calle **${fallas[0]}**.</p>`;
+                } else if (aciertos.length === 1 && fallas.length === 0) { // Un acierto y el usuario no eligió la segunda
+                     resultText += `<p style="color: orange;">⚠️ <strong>Resultado:</strong> Respuesta incompleta. Acertaste una pero te faltó la segunda.</p>`;
+                    resultText += `<p>✅ <strong>Acierto:</strong> Elegiste la calle **${aciertos[0]}**.</p>`;
+                } else {
+                    resultText += `<p style="color: red;">❌ <strong>Resultado:</strong> Incorrecto.</p>`;
+                    resultText += `<p>❌ <strong>Falla:</strong> No elegiste ninguna de las calles correctas. Elegiste **${fallas.join(' y ')}**.</p>`;
+                }
+
+                resultText += `<p><strong>Respuesta correcta:</strong> ${answer.correct.join(' y ')}</p>`;
+                resultText += `<p><strong>Puntos obtenidos:</strong> ${answer.score} puntos</p><br>`;
+                summaryDiv.innerHTML += resultText;
+            });
+            document.getElementById('restart-btn').addEventListener('click', createQuiz);
+        }
+
+        createQuiz();
+    </script>
+
+<div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+  <a href="index.html" 
+     style="background-color: #007bff; color: white; padding: 10px 20px; 
+            border-radius: 5px; text-decoration: none; font-weight: bold; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+    ⬅ Volver al inicio
+  </a>
+</div>
+
+</body>
+</html>
