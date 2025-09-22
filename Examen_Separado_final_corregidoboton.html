@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cuestionario de Ubicaciones</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f0f0f0; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; padding:20px; box-sizing:border-box; }
+    .quiz-container { background:#fff; padding:30px; border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,.1); width:100%; max-width:900px; text-align:center; }
+    .quiz-question { margin-bottom:20px; }
+    .street-inputs { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+    .street-inputs input { width:45%; min-width:200px; padding:10px; margin:10px 0; font-size:16px; border:1px solid #ccc; border-radius:5px; }
+    .controls { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
+    button { padding:12px 20px; font-size:14px; font-weight:bold; color:#fff; background:#007bff; border:none; border-radius:5px; cursor:pointer; transition:background .2s; }
+    button:hover { background:#0056b3; }
+    #feedback { margin-top:20px; font-size:18px; font-weight:600; text-align:left; }
+    .result-pair { text-align:left; }
+    .history-block { border-top:2px solid #ddd; margin-top:20px; padding-top:15px; text-align:left; }
+    .history-block h4 { margin:5px 0; color:#444; }
+    #history { display:none; text-align:left; margin-top:10px; }
+    .small { font-size:14px; font-weight:normal; color:#333; }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <h1>Cuestionario de Ubicaciones</h1>
+
+    <div id="quiz-content">
+      <div id="question-text" class="quiz-question"></div>
+
+      <div class="street-inputs">
+        <input type="text" id="street1-input" placeholder="Calle 1">
+        <input type="text" id="street2-input" placeholder="Calle 2">
+      </div>
+
+      <div class="controls" style="margin-top:8px;">
+        <button id="submit-btn">Enviar Respuesta</button>
+      </div>
+
+      <div id="feedback"></div>
+    </div>
+
+    <div id="results" style="display:none; text-align:left; margin-top:12px;">
+      <h2>Resultados Finales</h2>
+      <div id="summary"></div>
+      <div class="controls" style="margin-top:10px;">
+        <button id="restart-btn">Reiniciar Cuestionario</button>
+        <button id="retry-failed-btn" style="display:none;">Reintentar preguntas fallidas</button>
+        <button id="export-pdf-btn">Generar PDF del historial</button>
+      </div>
+    </div>
+
+    <div id="history">
+      <h2>Historial de intentos</h2>
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      { lugar: "Terminal 3 Cruces", calle1: "Boulevar Artigas", calle2: "Salvador Ferrer Serra" },
+      { lugar: "Terminal Rio Branco", calle1: "Galicia", calle2: "Rio Branco" },
+      { lugar: "Hospital Italiano", calle1: "Jorge Canning", calle2: "Boulevar Artigas" },
+      { lugar: "Hospital Español", calle1: "Avenida General Garibaldi", calle2: "Pando" },
+      { lugar: "Hospital de Clinicas", calle1: "Avenida Italia", calle2: "Las Heras" },
+      { lugar: "Hospital Maciel", calle1: "25 de Mayo", calle2: "Maciel" },
+      { lugar: "Hospital Militar", calle1: "Avenida 8 de Octubre", calle2: "Mariano Moreno" },
+      { lugar: "Sanatorio Banco de Seguros", calle1: "Avenida Jose Pedro Varela", calle2: "Boulevar Batlle y Ordoñez" },
+      { lugar: "Hospital Pasteur", calle1: "Larravide", calle2: "Asilo" },
+      { lugar: "Hospital Piñeyro del Campo", calle1: "Larravide", calle2: "Morelli" },
+      { lugar: "Hospital Pereyra Rossell", calle1: "Boulevar Artigas", calle2: "Francisco Canaro" },
+      { lugar: "Hospital Saint Bois", calle1: "Camino Colman", calle2: "Guanahany" },
+      { lugar: "Hospital Vilardebo", calle1: "Avenida Millan", calle2: "Santa Fe" },
+      { lugar: "Hospital Policial", calle1: "Boulevar Batlle y Ordoñez", calle2: "Jose Pedro Varela" },
+      { lugar: "Jefatura de Policia", calle1: "San Jose", calle2: "Yi" },
+      { lugar: "Comisaria de la Mujer", calle1: "San Jose", calle2: "Paraguay" },
+      { lugar: "Comisaria de la Seccional 1ª", calle1: "25 de Mayo", calle2: "Perez Castellano" },
+      { lugar: "Comisaria de la Seccional 2ª", calle1: "Zelmar Michelini", calle2: "Maldonado" },
+      { lugar: "Comisaria de la Seccional 3ª", calle1: "Paysandu", calle2: "Yi" },
+      { lugar: "Comisaria de la Seccional 4ª", calle1: "Miguelete", calle2: "Inca" },
+      { lugar: "Comisaria de la Seccional 5ª", calle1: "Joaquin de Salterain", calle2: "Canelones" },
+      { lugar: "Comisaria de la Seccional 6ª", calle1: "Avenida Agraciada", calle2: "Coronel Tajes" },
+      { lugar: "Comisaria de la Seccional 7ª", calle1: "Felix Olmedo", calle2: "Valentin Gomez" },
+      { lugar: "Comisaria de la Seccional 8ª", calle1: "Avenida Millan", calle2: "Molinos de Raffo" },
+      { lugar: "Comisaria de la Seccional 9ª", calle1: "Sambucetti", calle2: "Avenida General Garibaldi" },
+      { lugar: "Comisaria de la Seccional 10ª", calle1: "Gabriel Pereira", calle2: "Libertad" },
+      { lugar: "Comisaria de la Seccional 11ª", calle1: "Velsen", calle2: "Santiago de Anca" },
+      { lugar: "Comisaria de la Seccional 12ª", calle1: "Avenida Millan", calle2: "Pierre Fossey" },
+      { lugar: "Comisaria de la Seccional 13ª", calle1: "Boulevar Artigas", calle2: "Cufre" },
+      { lugar: "Comisaria de la Seccional 14ª", calle1: "Avenida Italia", calle2: "Almiron" },
+      { lugar: "Comisaria de la Seccional 15ª", calle1: "Avenida 8 de octubre", calle2: "Gobernador de Viana" },
+      { lugar: "Comisaria de la Seccional 16ª", calle1: "Carreras Nacionales", calle2: "Calamet" },
+      { lugar: "Comisaria de la Seccional 17ª", calle1: "Aparicio Saravia", calle2: "Martirene" },
+      { lugar: "Comisaria de la Seccional 18ª", calle1: "Giannino Castiglioni", calle2: "Camino Repetto" },
+      { lugar: "Comisaria de la Seccional 19ª", calle1: "Avenida Carlos Maria Ramirez", calle2: "Carlos de la Vega" },
+      { lugar: "Comisaria de la Seccional 20ª", calle1: "Avenida Luis Batlle Berres", calle2: "La Balsa" },
+      { lugar: "Comisaria de la Seccional 21ª", calle1: "Alberico Passadore", calle2: "Plaza Vidiella" },
+      { lugar: "Comisaria de la Seccional 22ª", calle1: "Camino Melilla", calle2: "Peabody" },
+      { lugar: "Comisaria de la Seccional 23ª", calle1: "Avenida Luis Batlle Berres", calle2: "Camino del Fortin" },
+      { lugar: "Comisaria de la Seccional 24ª", calle1: "Prusia", calle2: "Rio de Janeiro" },
+      { lugar: "Policia Nacional de Transito", calle1: "Camino Maldonado", calle2: "Roma" }
+    ];
+
+    // ---- logica del cuestionario (igual pero evaluateAnswer modificado) ----
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let userAnswers = [];
+    let numQuestions = 0;
+    let attemptCounter = 0;
+    let historyData = [];
+
+    function normalizeString(str) {
+      return str
+        .trim()
+        .toLowerCase()
+        .replace(/\b(de|del|la|las|los|el|al|a|en)\b/g, '')
+        .replace(/\s+/g, ' ');
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function createQuiz() {
+      let numQuestionsInput = prompt(`¿Cuantas preguntas quieres? (Maximo ${quizData.length})`);
+      numQuestions = parseInt(numQuestionsInput);
+      if (isNaN(numQuestions) || numQuestions <= 0 || numQuestions > quizData.length) {
+        alert(`Por favor, ingresa un numero valido entre 1 y ${quizData.length}.`);
+        return createQuiz();
+      }
+      shuffleArray(quizData);
+      questions = quizData.slice(0, numQuestions);
+      startQuiz();
+    }
+
+    function startQuiz() {
+      currentQuestionIndex = 0;
+      score = 0;
+      userAnswers = [];
+      document.getElementById('quiz-content').style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('history').style.display = 'none';
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const currentQuiz = questions[currentQuestionIndex];
+      document.getElementById('question-text').innerHTML = `<h3>Pregunta ${currentQuestionIndex + 1} de ${numQuestions}</h3><br>¿En que calles se encuentra el <strong>${currentQuiz.lugar}</strong>?`;
+      document.getElementById('street1-input').value = '';
+      document.getElementById('street2-input').value = '';
+      document.getElementById('feedback').textContent = '';
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.textContent = 'Enviar Respuesta';
+      submitBtn.onclick = evaluateAnswer;
+    }
+
+    function evaluateAnswer() {
+      const feedback = document.getElementById('feedback');
+      const currentQuiz = questions[currentQuestionIndex];
+      const submitBtn = document.getElementById('submit-btn');
+
+      const s1 = document.getElementById('street1-input').value;
+      const s2 = document.getElementById('street2-input').value;
+
+      if (s1.trim() === '' || s2.trim() === '') {
+        feedback.textContent = 'Por favor, completa ambas calles.';
+        return;
+      }
+
+      const userWords = [
+        ...normalizeString(s1).split(" "),
+        ...normalizeString(s2).split(" ")
+      ];
+
+      // Palabras a ignorar
+      const ignoredWords = ["boulevar", "avenida", "calle", "camino"];
+
+      const correctWords = [
+        ...normalizeString(currentQuiz.calle1).split(" "),
+        ...normalizeString(currentQuiz.calle2).split(" ")
+      ];
+
+      // Filtrar palabras ignoradas
+      const filteredUserWords = userWords.filter(
+        w => w && !ignoredWords.includes(w.toLowerCase())
+      );
+      const filteredCorrectWords = correctWords.filter(
+        w => w && !ignoredWords.includes(w.toLowerCase())
+      );
+
+      // Contar coincidencias
+      let matchCount = filteredUserWords.filter(w => filteredCorrectWords.includes(w)).length;
+
+      // Ahora solo se da como correcta si hay al menos 2 coincidencias
+      let questionScore = matchCount >= 2 ? 1 : 0;
+
+      // Guardar el resultado del usuario
+      score += questionScore;
+      userAnswers.push({
+        question: currentQuiz.lugar,
+        user: { street1: s1.trim(), street2: s2.trim() },
+        correct: [currentQuiz.calle1, currentQuiz.calle2],
+        score: questionScore
+      });
+
+      // Mostrar feedback
+      let icon = questionScore === 1 ? "✅ Correcto" : "❌ Incorrecto";
+      feedback.innerHTML = `<div><strong>${icon}</strong></div>
+        <div class="small"><strong>Tu respuesta:</strong> ${escapeHtml(s1.trim())} , ${escapeHtml(s2.trim())}</div>
+        <div class="small"><strong>Respuesta correcta:</strong> ${escapeHtml(currentQuiz.calle1)} , ${escapeHtml(currentQuiz.calle2)}</div>`;
+
+      // Preparar el botón para la siguiente pregunta
+      submitBtn.textContent = 'Siguiente Pregunta';
+      submitBtn.onclick = nextQuestion;
+    }
+
+    function nextQuestion() {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < numQuestions) {
+        showQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('quiz-content').style.display = 'none';
+      document.getElementById('results').style.display = 'block';
+      const summaryDiv = document.getElementById('summary');
+      summaryDiv.innerHTML = `<h3>Puntaje total: ${score} de ${numQuestions} posibles.</h3><br>`;
+
+      let failedQuestions = [];
+      userAnswers.forEach((answer, index) => {
+        let icon = answer.score === 1 ? '✅' : (answer.score === 0.5 ? '⚠️' : '❌');
+        let resultText = `<div class="result-pair"><h4>${icon} Pregunta ${index + 1}: ${answer.question}</h4>`;
+        resultText += `<p><strong>Tu respuesta:</strong> ${escapeHtml(answer.user.street1)}, ${escapeHtml(answer.user.street2)}</p>`;
+        resultText += `<p><strong>Correctas:</strong> ${escapeHtml(answer.correct[0])} y ${escapeHtml(answer.correct[1])}</p>`;
+        resultText += `<p><strong>Puntos obtenidos:</strong> ${answer.score}</p></div><br>`;
+        summaryDiv.innerHTML += resultText;
+
+        if (answer.score < 1) failedQuestions.push(answer.question);
+      });
+
+      const retryBtn = document.getElementById('retry-failed-btn');
+      retryBtn.style.display = failedQuestions.length > 0 ? 'inline-block' : 'none';
+      retryBtn.onclick = () => retryFailed();
+
+      document.getElementById('restart-btn').onclick = createQuiz;
+      document.getElementById('export-pdf-btn').onclick = exportPdf;
+
+      saveHistory();
+      document.getElementById('history').style.display = 'block';
+    }
+
+    function retryFailed() {
+      const failedPlaces = userAnswers.filter(a => a.score < 1).map(a => a.question);
+      questions = quizData.filter(q => failedPlaces.includes(q.lugar));
+      numQuestions = questions.length;
+      startQuiz();
+    }
+
+    function saveHistory() {
+      attemptCounter++;
+      const historyDiv = document.getElementById('history');
+      const block = document.createElement('div');
+      block.classList.add('history-block');
+
+      const date = new Date().toLocaleString();
+      block.innerHTML = `<h4>Intento ${attemptCounter} — ${date}</h4>`;
+      block.innerHTML += `<p><strong>Puntaje:</strong> ${score} de ${numQuestions}</p>`;
+
+      userAnswers.forEach(answer => {
+        let icon = answer.score === 1 ? '✅' : (answer.score === 0.5 ? '⚠️' : '❌');
+        block.innerHTML += `<p>${icon} <strong>${answer.question}</strong> → Tu respuesta: (${escapeHtml(answer.user.street1)}, ${escapeHtml(answer.user.street2)}) | Correctas: (${escapeHtml(answer.correct[0])}, ${escapeHtml(answer.correct[1])}) | Puntos: ${answer.score}</p>`;
+      });
+
+      historyDiv.appendChild(block);
+      historyData.push({ attempt: attemptCounter, date, score, numQuestions, answers: [...userAnswers] });
+    }
+
+    async function exportPdf() {
+      const choice = confirm("⚠️ Advertencia:\n\n¿Quieres refrescar la pagina SIN generar PDF?\n\nAceptar = Refrescar\nCancelar = Continuar con PDF");
+      if (choice) { alert("La pagina se refrescara ahora."); location.reload(); return; }
+
+      const portada = confirm("¿Quieres incluir una portada con datos (Titulo, Nombre, Fecha)?");
+      let title = "", name = "", datetime = "";
+      if (portada) { title = prompt("Titulo del documento:", "Historial de Cuestionario"); name = prompt("Nombres y Apellidos:", ""); datetime = prompt("Fecha y hora:", new Date().toLocaleString()); }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      let y = 20;
+
+      if (portada) {
+        doc.setFontSize(18);
+        doc.text(title || "Historial de Cuestionario", 10, y); y += 20;
+        if (name) { doc.setFontSize(14); doc.text("Nombre: " + name, 10, y); y += 10; }
+        if (datetime) { doc.setFontSize(14); doc.text("Fecha y hora: " + datetime, 10, y); y += 10; }
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text("Historial de intentos - Cuestionario de Ubicaciones", 10, y);
+      y += 10;
+
+      historyData.forEach(entry => {
+        doc.setFontSize(12);
+        doc.text(`Intento ${entry.attempt} — ${entry.date} | Puntaje: ${entry.score} de ${entry.numQuestions}`, 10, y);
+        y += 8;
+
+        entry.answers.forEach(ans => {
+          let text = `${ans.score === 1 ? '✅' : (ans.score === 0.5 ? '⚠️' : '❌')} ${ans.question} → Tu: ${ans.user.street1}, ${ans.user.street2} | Correctas: ${ans.correct[0]}, ${ans.correct[1]} | Puntos: ${ans.score}`;
+          doc.setFontSize(10);
+          const maxWidth = 180;
+          const split = doc.splitTextToSize(text, maxWidth);
+          doc.text(split, 10, y);
+          y += (split.length * 6);
+          if (y > 280) { doc.addPage(); y = 20; }
+        });
+
+        y += 4;
+      });
+
+      doc.save("historial_cuestionario.pdf");
+    }
+
+    function escapeHtml(unsafe) {
+      return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                   .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+                   .replace(/'/g, "&#039;");
+    }
+
+    // iniciar
+    createQuiz();
+  </script>
+
+<div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+  <a href="index.html" 
+     style="background-color: #007bff; color: white; padding: 10px 20px; 
+            border-radius: 5px; text-decoration: none; font-weight: bold; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+    ⬅ Volver al inicio
+  </a>
+</div>
+
+</body>
+</html>

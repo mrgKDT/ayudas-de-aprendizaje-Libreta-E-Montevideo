@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de la Guía de Conducción</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+        }
+        .quiz-question {
+            margin-bottom: 30px;
+            min-height: 120px;
+        }
+        .quiz-question h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 22px;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .option {
+            background-color: #e9e9e9;
+            padding: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            font-size: 17px;
+            text-align: left;
+            position: relative;
+            border: 2px solid transparent;
+        }
+        .option:hover {
+            background-color: #dcdcdc;
+            transform: translateY(-2px);
+        }
+        .option.correct {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            font-weight: bold;
+        }
+        .option.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        #continue-btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 8-px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 30px;
+        }
+        #continue-btn:hover {
+            background-color: #0056b3;
+        }
+        #feedback {
+            margin-top: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1.5;
+        }
+        #results {
+            margin-top: 30px;
+            text-align: left;
+        }
+        #results h2 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Test de la Guía Nacional de Conducción</h1>
+        <div id="quiz-content">
+            <div id="question-text" class="quiz-question"></div>
+            <div id="options" class="options-container"></div>
+            <button id="continue-btn" style="display: none;">Siguiente</button>
+            <div id="feedback"></div>
+        </div>
+        <div id="results" style="display: none;">
+            <h2>Resultados Finales</h2>
+            <div id="summary"></div>
+            <button id="restart-btn" style="display: none;">Reiniciar Test</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                question: "¿Cuál de las siguientes es una forma de detección del alcohol en el organismo que se realiza con una muestra de sangre?",
+                options: [
+                    "Espirometría",
+                    "Alcohol in the blood test (alcohol in the blood test)",
+                    "Examen de orina",
+                    "Examen de aliento"
+                ],
+                answer: "Alcohol in the blood test (alcohol in the blood test)",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué debe hacer un conductor ante la proximidad de un vehículo de emergencia (bomberos, ambulancias, policía) con sus señales sonoras y luminosas encendidas?",
+                options: [
+                    "Aumentar la velocidad para salir de su camino.",
+                    "Mantener su velocidad y carril.",
+                    "Despejar rápidamente la calle, acercándose al borde más próximo y deteniéndose.",
+                    "Bloquear la intersección para que el vehículo de emergencia tome otra ruta."
+                ],
+                answer: "Despejar rápidamente la calle, acercándose al borde más próximo y deteniéndose.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Al adelantar a un ciclista, ¿cuál es la distancia mínima que un vehículo motorizado debe dejar lateralmente?",
+                options: [
+                    "Al menos medio metro.",
+                    "Al menos un metro.",
+                    "Al menos un metro y medio.",
+                    "La misma distancia que con otro vehículo."
+                ],
+                answer: "Al menos un metro y medio.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Según el manual, ¿qué sucede con la carga de un vehículo al frenar bruscamente en una pendiente descendente?",
+                options: [
+                    "La carga tiende a desplazarse hacia la parte trasera.",
+                    "La carga tiende a desplazarse hacia la parte delantera.",
+                    "La carga se mantiene en su lugar.",
+                    "La carga se eleva por la inercia."
+                ],
+                answer: "La carga tiende a desplazarse hacia la parte delantera.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué se aconseja hacer en caso de sentir fatiga al conducir?",
+                options: [
+                    "Detenerse en un lugar seguro, beber agua y caminar.",
+                    "Detenerse en la vía pública y descansar.",
+                    "Beber una bebida energética y continuar el viaje.",
+                    "Abrir la ventanilla y seguir conduciendo."
+                ],
+                answer: "Detenerse en un lugar seguro, beber agua y caminar.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Por qué los espejos exteriores hacen que los vehículos parezcan más pequeños y alejados de lo que realmente están?",
+                options: [
+                    "Porque son espejos planos.",
+                    "Porque son espejos cóncavos.",
+                    "Porque son espejos convexos que cubren un mayor ángulo de visión.",
+                    "Porque tienen un recubrimiento especial anti-encandilamiento."
+                ],
+                answer: "Porque son espejos convexos que cubren un mayor ángulo de visión.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "De las siguientes opciones, ¿cuál es una fuerza que actúa directamente sobre el vehículo y la carga, según el manual?",
+                options: [
+                    "La resistencia del aire.",
+                    "El par de rueda.",
+                    "La fuerza de guiado lateral (fuerza centrípeta).",
+                    "Los derrapes."
+                ],
+                answer: "La fuerza de guiado lateral (fuerza centrípeta).",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué se debe evitar que haga la carga de un vehículo, según el manual?",
+                options: [
+                    "Que afecte la visibilidad del conductor.",
+                    "Que cause ruido o suciedad.",
+                    "Que arrastre o caiga sobre el pavimento.",
+                    "Todas las anteriores."
+                ],
+                answer: "Todas las anteriores.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "En una vía rápida, ¿cuál es la prioridad al usar un carril de aceleración?",
+                options: [
+                    "Irrumpir en la vía lo más rápido posible.",
+                    "Detenerse al inicio del carril, para elegir bien el momento de entrar a la vía principal.",
+                    "Usar el carril para acelerar y no detenerse.",
+                    "Ingresar a la vía principal sin importar si hay vehículos circulando."
+                ],
+                answer: "Detenerse al inicio del carril, para elegir bien el momento de entrar a la vía principal.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué es la somnolencia, según la definición del manual?",
+                options: [
+                    "El cansancio mental.",
+                    "La fatiga física.",
+                    "La falta de dormir lo necesario.",
+                    "El adormecimiento provocado por una comida copiosa."
+                ],
+                answer: "La falta de dormir lo necesario.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué ley regula las sanciones para conductores de transporte de pasajeros y carga que presenten alcohol en sangre?",
+                options: [
+                    "Ley 18113",
+                    "Ley 19061",
+                    "Ley 18191",
+                    "Reglamento Nacional de Circulación Vial"
+                ],
+                answer: "Ley 18191",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Cuál de las siguientes es una sanción por presentar alcohol en sangre, según la Ley Nº 18.191?",
+                options: [
+                    "La aplicación de una multa y la suspensión de la licencia por 6 meses a un año la primera vez.",
+                    "La inhabilitación inmediata del conductor y prisión.",
+                    "Solamente la aplicación de una multa.",
+                    "Suspensión de por vida de la licencia de conducir."
+                ],
+                answer: "La aplicación de una multa y la suspensión de la licencia por 6 meses a un año la primera vez.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "En una vía rápida, si no está claro que puede pasar al incorporarse, ¿qué debe hacer?",
+                options: [
+                    "Acelerar y entrar rápidamente para no interrumpir el flujo del tránsito.",
+                    "Detenerse al inicio del carril de aceleración y esperar el momento adecuado.",
+                    "Tocar la bocina y señalizar para que los otros vehículos le cedan el paso.",
+                    "Ingresar a la vía principal sin detenerse, ya que los vehículos que ya circulan tienen la obligación de ceder el paso."
+                ],
+                answer: "Detenerse al inicio del carril de aceleración y esperar el momento adecuado.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Cuál es la prohibición establecida en la Ley 19061, Artículo 14?",
+                options: [
+                    "La prohibición de circular a más de 80 km/h en vías urbanas.",
+                    "La prohibición de transporte de personas en la caja de vehículos y acoplados.",
+                    "La prohibición de usar el teléfono móvil mientras se conduce.",
+                    "La prohibición de adelantar en zonas de curvas."
+                ],
+                answer: "La prohibición de transporte de personas en la caja de vehículos y acoplados.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué debe hacer un conductor al percatarse de la presencia de animales sueltos en la vía?",
+                options: [
+                    "Continuar a la misma velocidad y encender las luces altas.",
+                    "Disminuir la velocidad y estar atento, deteniendo el vehículo si es necesario.",
+                    "Tocar la bocina de forma prolongada para asustar a los animales.",
+                    "Aumentar la velocidad para pasar rápidamente el peligro."
+                ],
+                answer: "Disminuir la velocidad y estar atento, deteniendo el vehículo si es necesario.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Al subir una pendiente y acelerar, ¿hacia dónde tiende a desplazarse la carga?",
+                options: [
+                    "Hacia la parte delantera.",
+                    "Hacia la parte trasera.",
+                    "Se mantiene en el centro del vehículo.",
+                    "La carga no se desplaza en una pendiente."
+                ],
+                answer: "Hacia la parte trasera.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Según el manual, ¿cuál de las siguientes no es una causa de fatiga al conducir?",
+                options: [
+                    "Déficit de horas de sueño.",
+                    "Manejo nocturno.",
+                    "Tener horarios irregulares de trabajo-descanso.",
+                    "Conducir de día con el sol de frente."
+                ],
+                answer: "Conducir de día con el sol de frente.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué son los puntos ciegos (ángulo muerto) en un vehículo?",
+                options: [
+                    "Los puntos que el conductor puede ver a través de los espejos interiores.",
+                    "Los puntos que no pueden ser controlados a través de los espejos retrovisores.",
+                    "Los puntos que están detrás de un vehículo grande.",
+                    "Los puntos que solo se ven con cámaras adicionales."
+                ],
+                answer: "Los puntos que no pueden ser controlados a través de los espejos retrovisores.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué es la alcoholemia?",
+                options: [
+                    "Un examen no invasivo para detectar alcohol.",
+                    "Un examen invasivo de sangre que determina la cantidad de alcohol por litro de sangre.",
+                    "La cantidad de alcohol en el aliento espirado.",
+                    "La prueba de orina para detectar alcohol."
+                ],
+                answer: "Un examen invasivo de sangre que determina la cantidad de alcohol por litro de sangre.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Según el manual, ¿cómo se eliminan las sustancias de alcohol del cuerpo?",
+                options: [
+                    "Por medio de la orina, el sudor, los pulmones y el hígado.",
+                    "Únicamente a través del hígado.",
+                    "Con ejercicio físico y bebidas energéticas.",
+                    "Solo a través de los riñones."
+                ],
+                answer: "Por medio de la orina, el sudor, los pulmones y el hígado.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "En una vía rápida, si no está claro que puede pasar al incorporarse, ¿qué debe hacer?",
+                options: [
+                    "Aumentar la velocidad y entrar rápidamente.",
+                    "Tocar la bocina para que los otros vehículos cedan el paso.",
+                    "Detenerse al inicio del carril de aceleración y esperar el momento adecuado.",
+                    "Ingresar directamente a la vía principal, ya que se tiene la prioridad."
+                ],
+                answer: "Detenerse al inicio del carril de aceleración y esperar el momento adecuado.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué vehículos tienen prioridad de paso cuando usan sus señales sonoras y luminosas?",
+                options: [
+                    "Los vehículos de transporte público.",
+                    "Los taxis y remises.",
+                    "Los vehículos de emergencia (bomberos, ambulancias, policía).",
+                    "Todos los vehículos que circulan por una avenida."
+                ],
+                answer: "Los vehículos de emergencia (bomberos, ambulancias, policía).",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Cuáles de las siguientes son causas de fatiga al conducir, según el manual?",
+                options: [
+                    "Manejar durante el día, con el sol de frente.",
+                    "Escuchar música relajante y tomar siestas.",
+                    "Déficit de horas de sueño, manejo nocturno y comidas copiosas.",
+                    "Tener el vehículo en buen estado de mantenimiento."
+                ],
+                answer: "Déficit de horas de sueño, manejo nocturno y comidas copiosas.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Cuando se transportan cargas, ¿qué debe evitar que la carga haga?",
+                options: [
+                    "Que afecte la visibilidad del conductor, la estabilidad del vehículo, y que provoque ruido o suciedad.",
+                    "Que se ensucie durante el trayecto.",
+                    "Que los accesorios de sujeción estén sueltos.",
+                    "Que no esté uniformemente distribuida."
+                ],
+                answer: "Que afecte la visibilidad del conductor, la estabilidad del vehículo, y que provoque ruido o suciedad.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué tipo de espejos se utilizan generalmente en el exterior de los vehículos y por qué?",
+                options: [
+                    "Planos, para que la imagen se vea tal cual es.",
+                    "Cóncavos, para reducir el ángulo de visión.",
+                    "Convexos, para cubrir un mayor ángulo de visión.",
+                    "Espejos retrovisores, para reducir los puntos ciegos."
+                ],
+                answer: "Convexos, para cubrir un mayor ángulo de visión.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "En un vehículo de carga, ¿hacia dónde tiende a desplazarse la carga al subir una pendiente y acelerar?",
+                options: [
+                    "Hacia la parte delantera.",
+                    "Hacia la parte trasera.",
+                    "Se mantiene en su lugar.",
+                    "Se mueve de lado a lado."
+                ],
+                answer: "Hacia la parte trasera.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué es lo primero que se debe hacer al percatarse de la presencia de animales sueltos en la vía?",
+                options: [
+                    "Tocar la bocina y acelerar para pasar rápido.",
+                    "Detener el vehículo bruscamente.",
+                    "Disminuir la velocidad y estar atento, deteniendo el vehículo si es necesario.",
+                    "Encender las luces altas para ver mejor."
+                ],
+                answer: "Disminuir la velocidad y estar atento, deteniendo el vehículo si es necesario.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué es la espirometría?",
+                options: [
+                    "Un examen invasivo de sangre.",
+                    "Un examen no invasivo que se realiza por medio del espirómetro y determina la cantidad de alcohol existente por litro de aire espirado.",
+                    "Una prueba de orina para detectar drogas.",
+                    "Un examen visual para detectar síntomas de ebriedad."
+                ],
+                answer: "Un examen no invasivo que se realiza por medio del espirómetro y determina la cantidad de alcohol existente por litro de aire espirado.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Cuál es la sanción por reincidir en la infracción de conducir con alcohol en sangre, según la Ley Nº 18.191?",
+                options: [
+                    "La inhabilitación por 6 meses a un año.",
+                    "La cancelación de la licencia de conducir.",
+                    "Solamente la aplicación de una multa.",
+                    "Prisión inmediata."
+                ],
+                answer: "La cancelación de la licencia de conducir.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Al bajar una pendiente y frenar, ¿hacia dónde tiende a desplazarse la carga?",
+                options: [
+                    "Hacia la parte trasera.",
+                    "Hacia los lados.",
+                    "Hacia la parte delantera.",
+                    "Se mantiene en su lugar."
+                ],
+                answer: "Hacia la parte delantera.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Según el manual, ¿qué es el efecto tijera?",
+                options: [
+                    "El efecto que se produce al frenar y la carga se desplaza hacia adelante.",
+                    "El fenómeno de pérdida de control de un vehículo articulado al frenar, donde el remolque se desplaza lateralmente.",
+                    "El fenómeno de pérdida de control en una curva.",
+                    "El efecto de inclinación de un vehículo en una pendiente."
+                ],
+                answer: "El fenómeno de pérdida de control de un vehículo articulado al frenar, donde el remolque se desplaza lateralmente.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Cuál es la fuerza que se opone al avance del vehículo?",
+                options: [
+                    "Fuerza de frenado.",
+                    "Fuerza de aceleración.",
+                    "Fuerza de resistencia a la rodadura y del aire.",
+                    "Fuerza de adherencia."
+                ],
+                answer: "Fuerza de resistencia a la rodadura y del aire.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "En relación a las mercancías peligrosas, ¿qué indica el número de la parte inferior en los paneles de señalización?",
+                options: [
+                    "El número de identificación del riesgo.",
+                    "El número de teléfono de emergencia.",
+                    "El número de identificación de la sustancia.",
+                    "El número de teléfono de la empresa de transporte."
+                ],
+                answer: "El número de identificación de la sustancia.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "En un vehículo de transporte escolar, ¿qué ley establece la prohibición de transportar más pasajeros de los que estén permitidos?",
+                options: [
+                    "Ley 18191, Art. 12.",
+                    "Ley 19061, Art. 14.",
+                    "Reglamento Nacional de Circulación Vial, Art. 10.",
+                    "Ley 18113, Art. 1."
+                ],
+                answer: "Ley 19061, Art. 14.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Según el manual, ¿cuál de los siguientes es un elemento de seguridad pasiva?",
+                options: [
+                    "El sistema de frenos ABS.",
+                    "El control de tracción (ASR).",
+                    "El cinturón de seguridad.",
+                    "El control electrónico de estabilidad (ESP)."
+                ],
+                answer: "El cinturón de seguridad.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "Al circular por una rotonda, ¿qué vehículos tienen prioridad de paso?",
+                options: [
+                    "Los vehículos que se incorporan a la rotonda.",
+                    "Los vehículos que ya están circulando dentro de la rotonda.",
+                    "Los vehículos más grandes.",
+                    "Los vehículos que vienen por la derecha."
+                ],
+                answer: "Los vehículos que ya están circulando dentro de la rotonda.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Qué es el 'barrido' en un ómnibus?",
+                options: [
+                    "El movimiento de los espejos retrovisores.",
+                    "El movimiento de las ventanillas.",
+                    "El movimiento de la cola del ómnibus al girar.",
+                    "El movimiento del conductor para ver el tráfico."
+                ],
+                answer: "El movimiento de la cola del ómnibus al girar.",
+                source: "manualprofesional_0.pdf"
+            },
+            {
+                question: "¿Cuál es la distancia mínima que debe mantener un conductor con respecto al vehículo que circula delante de usted a 60 km/h?",
+                options: [
+                    "50 metros.",
+                    "30 metros.",
+                    "La mitad de la velocidad en km.",
+                    "Multiplicar por dos la velocidad en km y traducirla en metros."
+                ],
+                answer: "La mitad de la velocidad en km.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "¿Qué debe hacer usted cuando otro vehículo lo está adelantando?",
+                options: [
+                    "Mantener la velocidad o disminuirla.",
+                    "Encender las luces.",
+                    "Frenar bruscamente.",
+                    "Aumentar la velocidad para evitar ser adelantado."
+                ],
+                answer: "Mantener la velocidad o disminuirla.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Un conductor al enfrentar una señal de PARE debe:",
+                options: [
+                    "Seguir su marcha a la misma velocidad.",
+                    "Reducir un poco la velocidad y continuar.",
+                    "Detener totalmente la marcha.",
+                    "Reducir la velocidad y detenerse si fuera necesario."
+                ],
+                answer: "Detener totalmente la marcha.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Usted puede usar la bocina de su vehículo para:",
+                options: [
+                    "Apurar al que va adelante.",
+                    "Prevenir un accidente en caso de extrema necesidad.",
+                    "Avisar que va a estacionar.",
+                    "Siempre, salvo cuando pasa frente a un hospital."
+                ],
+                answer: "Prevenir un accidente en caso de extrema necesidad.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Cuando los neumáticos están con menor cantidad de aire que la debida para su vehículo:",
+                options: [
+                    "Se ahorra combustible.",
+                    "El auto se adhiere mejor a la calzada.",
+                    "Aumenta el consumo de combustible.",
+                    "Aumenta la vida útil del neumático."
+                ],
+                answer: "Aumenta el consumo de combustible.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "La velocidad adecuada de circulación de un vehículo en caso de aglomeración de personas es:",
+                options: [
+                    "20 km/h.",
+                    "30 km/h.",
+                    "15 km/h.",
+                    "La misma velocidad máxima permitida."
+                ],
+                answer: "15 km/h.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "¿Cuál es el color de las luces que proyectan hacia adelante los vehículos?",
+                options: [
+                    "Solo blancas.",
+                    "Solo amarillas.",
+                    "Blancas o amarillas.",
+                    "Blancas o azules."
+                ],
+                answer: "Blancas o amarillas.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Antes de empezar a pasar (adelantar) el vehículo que circula delante de usted deberá:",
+                options: [
+                    "Mirar por el espejo retrovisor y encender el señalero.",
+                    "Tocar bocina.",
+                    "Hacer cambio de luces.",
+                    "Colocarse en la senda derecha y encender el señalero."
+                ],
+                answer: "Mirar por el espejo retrovisor y encender el señalero.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Para reducir los efectos del alcohol en la sangre, al momento de asumir la conducción de cualquier vehículo debemos:",
+                options: [
+                    "Beber café.",
+                    "Consumir chocolate.",
+                    "Tomar un baño frío, previo a conducir.",
+                    "Ninguna es correcta. No debemos conducir bajo los efectos del alcohol."
+                ],
+                answer: "Ninguna es correcta. No debemos conducir bajo los efectos del alcohol.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Ante la proximidad de un vehículo de emergencia usted:",
+                options: [
+                    "Aumenta la velocidad.",
+                    "Despeja rápidamente la calzada permaneciendo detenido donde no moleste.",
+                    "Hace cambio de luces y toca la bocina para avisar al resto de los conductores.",
+                    "Continúa la marcha si tiene preferencia."
+                ],
+                answer: "Despeja rápidamente la calzada permaneciendo detenido donde no moleste.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "¿Qué se debe hacer si su vehículo sufre un desperfecto en la carretera?",
+                options: [
+                    "Quedarse dentro del vehículo sin más y esperar que alguien lo auxilie.",
+                    "Encender las luces de emergencia y descender con precaución para arrimarlo a la banquina.",
+                    "Colocar triángulos reflectivos (delante y detrás) del vehículo para advertir el mismo.",
+                    "Solo B y C son las correctas."
+                ],
+                answer: "Solo B y C son las correctas.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "¿Qué fuerza afecta el control del vehículo en las curvas?",
+                options: [
+                    "Fuerza de la gravedad.",
+                    "Fuerza centrípeta y centrífuga.",
+                    "Fuerza de la inercia únicamente.",
+                    "La velocidad del viento."
+                ],
+                answer: "Fuerza centrípeta y centrífuga.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Si usted debe estacionar en bajada, ¿cómo debe dejar el vehículo?",
+                options: [
+                    "Deja el auto derecho y aplica el freno de mano.",
+                    "Deja el auto derecho y le pone cambio.",
+                    "Aplica el freno de mano y gira las ruedas hacia el cordón de la vereda.",
+                    "Aplica el freno de mano y gira las ruedas contrario al cordón de la vereda."
+                ],
+                answer: "Aplica el freno de mano y gira las ruedas hacia el cordón de la vereda.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Los funcionarios del cuerpo de inspectores de tránsito, ¿están facultados para modificar las preferencias establecidas?",
+                options: [
+                    "Verdadero.",
+                    "Falso."
+                ],
+                answer: "Verdadero.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "¿A qué velocidad se debe circular ante destellantes amarillos instalados en las cercanías de las escuelas?",
+                options: [
+                    "A 15 km/h.",
+                    "A paso de peatón.",
+                    "A 25 km/h.",
+                    "A 30 km/h."
+                ],
+                answer: "A 15 km/h.",
+                source: "simulacro de examen"
+            },
+            {
+                question: "Los funcionarios del cuerpo de inspectores de tránsito, no están facultados para modificar las preferencias establecidas o los sentidos de circulación.",
+                options: [
+                    "Falso.",
+                    "Verdadero."
+                ],
+                answer: "Falso.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Ante irregularidades en la documentación o estado del vehículo, este puede ser detenido por funcionario de tránsito, igual que la documentación (del conductor y del vehículo) previa entrega del recibo pertinente.",
+                options: [
+                    "Verdadero.",
+                    "Falso."
+                ],
+                answer: "Verdadero.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Al reventarse un neumático se debe:",
+                options: [
+                    "Tomar fuertemente el volante y frenar tan suavemente como le sea posible.",
+                    "Frenar bruscamente.",
+                    "Quitar el pie del acelerador y girar para el lado que reventó el neumático.",
+                    "Frenar suavemente, arrimando el auto al borde derecho hasta detenerse."
+                ],
+                answer: "Tomar fuertemente el volante y frenar tan suavemente como le sea posible.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Cuando un automóvil al salir de un garaje cruza la vereda, obtiene la preferencia sobre los peatones que circulan por ella.",
+                options: [
+                    "Falso.",
+                    "Verdadero."
+                ],
+                answer: "Falso.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "El peatón: tiene preferencia de cruce en cualquier lugar de la calzada.",
+                options: [
+                    "Falso.",
+                    "Verdadero."
+                ],
+                answer: "Falso.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Es correcto adelantar a un vehículo que está dando paso a peatones.",
+                options: [
+                    "Falso.",
+                    "Verdadero."
+                ],
+                answer: "Falso.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Adelantamiento correcto es una maniobra realizada:",
+                options: [
+                    "Por el costado derecho del vehículo que se va a adelantar.",
+                    "Por el costado izquierdo del vehículo que se va a adelantar.",
+                    "Por cualquier costado, siempre que se señalice."
+                ],
+                answer: "Por el costado izquierdo del vehículo que se va a adelantar.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Las luces altas ¿deben sustituirse por las de alcance medio cuando hay riesgo de encandilamiento?",
+                options: [
+                    "Sí.",
+                    "No."
+                ],
+                answer: "Sí.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Un conductor al enfrentar una señal de PARE debe:",
+                options: [
+                    "Seguir su marcha a la misma velocidad.",
+                    "Reducir un poco la velocidad y continuar.",
+                    "Detener totalmente la marcha.",
+                    "Reducir la velocidad y detenerse si fuera necesario."
+                ],
+                answer: "Detener totalmente la marcha.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "La preferencia de paso del vehículo de la derecha no regirá:",
+                options: [
+                    "En los cruces regulados con semáforos o agentes de tránsito.",
+                    "En los cruces donde no hay ninguna señalización.",
+                    "En las rotondas."
+                ],
+                answer: "En los cruces regulados con semáforos o agentes de tránsito.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Un cruce regulado:",
+                options: [
+                    "Es aquel en el que existe semáforos funcionando regularmente, un inspector o un agente de tránsito.",
+                    "Es aquel en el que existen señales de Pare o Ceda el Paso.",
+                    "Es aquel en el que se tiene que parar por ley."
+                ],
+                answer: "Es aquel en el que existe semáforos funcionando regularmente, un inspector o un agente de tránsito.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "En un cruce no regulado ni señalizado ¿qué vehículo deberá ceder el derecho preferente de paso?",
+                options: [
+                    "El que aparece por la izquierda.",
+                    "El que aparece por la derecha.",
+                    "El vehículo más grande."
+                ],
+                answer: "El que aparece por la izquierda.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Un conductor al enfrentar una señal de “ceda el paso” deberá:",
+                options: [
+                    "Aumentar la velocidad y pasar primero.",
+                    "Reducir la velocidad y detenerse si fuera necesario.",
+                    "Mantener la velocidad, ya que los otros vehículos deben cederle el paso."
+                ],
+                answer: "Reducir la velocidad y detenerse si fuera necesario.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Estando estacionado, para iniciar la marcha se debe de señalar…",
+                options: [
+                    "Con las luces altas.",
+                    "Con el señalero para el lado de la calle.",
+                    "Con el señalero para el lado de la acera."
+                ],
+                answer: "Con el señalero para el lado de la calle.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "En un repecho se puede adelantar a otro vehículo.",
+                options: [
+                    "Verdadero.",
+                    "Falso."
+                ],
+                answer: "Falso.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "El cinturón tiene el objetivo fundamental de contrarrestar en los pasajeros de un vehículo la fuerza:",
+                options: [
+                    "De gravedad.",
+                    "De inercia.",
+                    "Centrífuga."
+                ],
+                answer: "De inercia.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Cruze peatonal es:",
+                options: [
+                    "La senda de seguridad formada por la prolongación (imaginaria o demarcada) del eje de calzada.",
+                    "Las señalizadas con franjas blancas paralelas (la “cebra”).",
+                    "A y B son correctas.",
+                ],
+                answer: "A y B son correctas.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "¿Qué luces deben llevar encendidas un vehículo durante la noche en las áreas urbanas?",
+                options: [
+                    "Luces de posición.",
+                    "Luces bajas.",
+                    "Luces de posición y luces bajas.",
+                ],
+                answer: "Luces de posición y luces bajas.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "¿Cuál es la edad mínima para poder viajar en el asiento delantero del vehículo?",
+                options: [
+                    "10 años.",
+                    "11 años.",
+                    "12 años.",
+                    "13 años."
+                ],
+                answer: "12 años.",
+                source: "academiadelmolino.com.uy"
+            },
+            {
+                question: "Cuando va detrás de un vehículo durante la noche deben usarse las luces cortas.",
+                options: [
+                    "Cuando la distancia haga innecesarias las luces largas.",
+                    "Siempre.",
+                    "Solo en vías urbanas.",
+                ],
+                answer: "Cuando la distancia haga innecesarias las luces largas.",
+                source: "academiadelmolino.com.uy"
+            },
+        ];
+
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let totalScore = 0;
+        let userAnswers = [];
+        let numQuestions = 0;
+        const maxQuestions = quizData.length;
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function createQuiz() {
+            let numQuestionsInput = prompt(`¿Cuántas preguntas quieres? (Máximo ${maxQuestions})`);
+            numQuestions = parseInt(numQuestionsInput);
+
+            if (isNaN(numQuestions) || numQuestions <= 0 || numQuestions > maxQuestions) {
+                alert(`Por favor, ingresa un número válido entre 1 y ${maxQuestions}.`);
+                return createQuiz();
+            }
+
+            shuffleArray(quizData);
+            questions = quizData.slice(0, numQuestions);
+            currentQuestionIndex = 0;
+            totalScore = 0;
+            userAnswers = [];
+            document.getElementById('quiz-content').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('restart-btn').style.display = 'none';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const currentQuiz = questions[currentQuestionIndex];
+            const questionText = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options');
+            const feedback = document.getElementById('feedback');
+            const continueBtn = document.getElementById('continue-btn');
+
+            questionText.innerHTML = `<h3>Pregunta ${currentQuestionIndex + 1} de ${numQuestions}</h3><br>${currentQuiz.question}`;
+            optionsContainer.innerHTML = '';
+            feedback.textContent = '';
+            continueBtn.style.display = 'none';
+            continueBtn.textContent = 'Siguiente';
+
+            const shuffledOptions = [...currentQuiz.options];
+            shuffleArray(shuffledOptions);
+
+            shuffledOptions.forEach(option => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.textContent = option;
+                optionDiv.onclick = () => handleSelection(optionDiv, option, currentQuiz.answer);
+                optionsContainer.appendChild(optionDiv);
+            });
+        }
+
+        function handleSelection(selectedDiv, selectedText, correctAnswer) {
+            const options = document.querySelectorAll('.option');
+            const feedback = document.getElementById('feedback');
+            const continueBtn = document.getElementById('continue-btn');
+            
+            // Disable all options
+            options.forEach(option => {
+                option.style.pointerEvents = 'none';
+            });
+
+            const isCorrect = selectedText === correctAnswer;
+            if (isCorrect) {
+                selectedDiv.classList.add('correct');
+                totalScore++;
+                feedback.innerHTML = `¡Correcto! Has ganado 1 punto.`;
+            } else {
+                selectedDiv.classList.add('incorrect');
+                feedback.innerHTML = `¡Incorrecto! La respuesta correcta era: **${correctAnswer}**`;
+            }
+
+            // Highlight the correct answer if the user's choice was wrong
+            if (!isCorrect) {
+                options.forEach(option => {
+                    if (option.textContent === correctAnswer) {
+                        option.classList.add('correct');
+                    }
+                });
+            }
+
+            userAnswers.push({
+                question: questions[currentQuestionIndex].question,
+                userAnswer: selectedText,
+                correctAnswer: correctAnswer,
+                isCorrect: isCorrect
+            });
+
+            continueBtn.style.display = 'block';
+            continueBtn.onclick = nextQuestion;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < numQuestions) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-content').style.display = 'none';
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.style.display = 'block';
+            const summaryDiv = document.getElementById('summary');
+            const restartBtn = document.getElementById('restart-btn');
+
+            const correctCount = userAnswers.filter(a => a.isCorrect).length;
+            const incorrectCount = numQuestions - correctCount;
+
+            summaryDiv.innerHTML = `<h3>Puntaje Final: ${totalScore} de ${numQuestions}</h3>
+                                    <p>Respuestas correctas: ${correctCount}</p>
+                                    <p>Respuestas incorrectas: ${incorrectCount}</p><br>`;
+
+            userAnswers.forEach((answer, index) => {
+                let resultText = `<h4>Pregunta ${index + 1}: ${answer.question}</h4>`;
+                
+                resultText += `<p><strong>Tu respuesta:</strong> ${answer.userAnswer}</p>`;
+
+                if (answer.isCorrect) {
+                    resultText += `<p style="color: green;">✅ <strong>Resultado:</strong> Correcto</p>`;
+                } else {
+                    resultText += `<p style="color: red;">❌ <strong>Resultado:</strong> Incorrecto</p>`;
+                }
+                resultText += `<p><strong>Respuesta correcta:</strong> ${answer.correctAnswer}</p><br>`;
+                summaryDiv.innerHTML += resultText;
+            });
+
+            restartBtn.style.display = 'block';
+            restartBtn.addEventListener('click', createQuiz);
+        }
+
+        createQuiz();
+    </script>
+</body>
+</html>
